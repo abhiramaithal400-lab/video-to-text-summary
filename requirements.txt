@@ -1,0 +1,9 @@
+torch
+torchvision
+transformers
+opencv-python-headless
+numpy
+evaluate
+rouge_score
+pillow
+streamlit
