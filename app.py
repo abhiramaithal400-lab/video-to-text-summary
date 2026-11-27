@@ -52,11 +52,11 @@ st.markdown("""
         padding: 1.35rem 2.5rem;
         margin-left: -2rem;
         margin-right: -2rem;
-        margin-bottom: 1.8rem;
+        margin-bottom: 1.5rem;
         box-shadow: 0 4px 25px rgba(121, 254, 12, 0.3);
     }
     .custom-top-title {
-        font-size: 2.45rem;
+        font-size: 2.35rem;
         font-weight: 900;
         letter-spacing: -0.03em;
         text-transform: uppercase;
@@ -75,33 +75,21 @@ st.markdown("""
         background-color: #111726;
         border: 1px solid #1E293B;
         border-radius: 14px;
-        padding: 1.5rem;
-        margin-bottom: 1.25rem;
-    }
-    
-    /* Prominent Select Input Video heading */
-    .panel-card-title {
-        font-size: 1.55rem !important;
-        font-weight: 800 !important;
-        color: #FFFFFF !important;
-        margin-bottom: 1.15rem !important;
-        display: flex;
-        align-items: center;
-        gap: 0.6rem;
-        letter-spacing: -0.01em;
+        padding: 1.25rem 1.6rem;
+        margin-bottom: 1.5rem;
     }
 
     /* High-contrast Radio Button pills for dark mode */
     div[data-testid="stRadio"] div[role="radiogroup"] {
         display: flex !important;
         flex-direction: row !important;
-        gap: 1.25rem !important;
+        gap: 0.8rem !important;
     }
     div[data-testid="stRadio"] label {
         background-color: #182236 !important;
         border: 2px solid #334155 !important;
-        border-radius: 10px !important;
-        padding: 0.8rem 1.6rem !important;
+        border-radius: 8px !important;
+        padding: 0.55rem 1.25rem !important;
         cursor: pointer !important;
         transition: all 0.2s ease !important;
     }
@@ -110,19 +98,13 @@ st.markdown("""
         background-color: #1E2B45 !important;
     }
     div[data-testid="stRadio"] label p {
-        font-size: 1.25rem !important;
-        font-weight: 800 !important;
+        font-size: 1.05rem !important;
+        font-weight: 700 !important;
         color: #FFFFFF !important;
         margin: 0 !important;
     }
 
     /* Selectbox label and options */
-    div[data-testid="stSelectbox"] label p {
-        font-size: 1.15rem !important;
-        font-weight: 700 !important;
-        color: #F8FAFC !important;
-        margin-bottom: 0.5rem !important;
-    }
     div[data-testid="stSelectbox"] div[data-baseweb="select"] {
         background-color: #182236 !important;
         border: 1.5px solid #334155 !important;
@@ -130,23 +112,7 @@ st.markdown("""
     }
     div[data-testid="stSelectbox"] div[data-baseweb="select"] * {
         color: #FFFFFF !important;
-        font-size: 1.1rem !important;
-    }
-
-    /* Model Information Box */
-    .model-info-box {
-        background: #101624;
-        border: 1px solid #1E293B;
-        border-radius: 10px;
-        padding: 1.2rem 1.4rem;
-        font-size: 0.98rem;
-        color: #94A3B8;
-        line-height: 1.65;
-        margin-top: 1rem;
-    }
-    .model-highlight {
-        color: #79FE0C;
-        font-weight: 700;
+        font-size: 1.05rem !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -252,17 +218,18 @@ st.markdown("""
 
 
 # -----------------------------------------------------------------------------
-# Main Dashboard Layout
+# Sleek Top Control Bar: Source, Selection & Status (Replaces blank space)
 # -----------------------------------------------------------------------------
-left_col, right_col = st.columns([1.0, 2.2], gap="large")
+st.markdown('<div class="panel-card">', unsafe_allow_html=True)
+sel_col1, sel_col2, sel_col3 = st.columns([1.0, 1.8, 1.4], gap="medium")
 
-# =============================================================================
-# LEFT COLUMN: Selection (Demo clips vs Upload) & Architecture
-# =============================================================================
-with left_col:
-    st.markdown('<div class="panel-card">', unsafe_allow_html=True)
-    st.markdown('<div class="panel-card-title">📹 Select Input Video</div>', unsafe_allow_html=True)
+current_video_url = None
+current_events_list = []
+match_display_name = ""
+match_status_text = "READY FOR BROADCAST"
 
+with sel_col1:
+    st.markdown('<div style="font-size:1.1rem; font-weight:800; color:#FFFFFF; margin-bottom:0.4rem;">📹 Video Source</div>', unsafe_allow_html=True)
     source_mode = st.radio(
         "Source Selection Mode",
         ["Demo clips", "Upload"],
@@ -270,25 +237,26 @@ with left_col:
         label_visibility="collapsed",
     )
 
-    current_video_url = None
-    current_events_list = []
-
+with sel_col2:
     if source_mode == "Demo clips":
+        st.markdown('<div style="font-size:1.1rem; font-weight:800; color:#FFFFFF; margin-bottom:0.4rem;">⚽ Select Match Clip</div>', unsafe_allow_html=True)
         chosen_demo_name = st.selectbox(
             "Select demo match clip:",
             list(DEMO_MATCHES.keys()),
+            label_visibility="collapsed",
         )
         match_info = DEMO_MATCHES[chosen_demo_name]
         current_video_url = match_info["static_url"]
         current_events_list = match_info["events"]
-
+        match_display_name = f"{match_info['home']} vs {match_info['away']}"
     else:
+        st.markdown('<div style="font-size:1.1rem; font-weight:800; color:#FFFFFF; margin-bottom:0.4rem;">📤 Upload Match Video (MP4)</div>', unsafe_allow_html=True)
         uploaded_file = st.file_uploader(
             "Upload a match video (MP4 format, max 3 min):",
             type=config.ALLOWED_FORMATS,
+            label_visibility="collapsed",
         )
         if uploaded_file is not None:
-            # Save upload to static folder with unique hash to prevent browser caching
             os.makedirs("static", exist_ok=True)
             custom_filename = f"upload_{uploaded_file.name.replace(' ', '_')}"
             custom_path = os.path.join("static", custom_filename)
@@ -298,14 +266,16 @@ with left_col:
             is_valid, err = validate_video(custom_path)
             if not is_valid:
                 st.error(f"Validation Error: {err}")
+                match_status_text = "VALIDATION FAILED"
             else:
                 current_video_url = f"/app/static/{custom_filename}"
+                match_display_name = uploaded_file.name
                 cache_key = f"analysis_{uploaded_file.name}_{uploaded_file.size}"
 
                 if cache_key in st.session_state:
                     current_events_list = st.session_state[cache_key]
                 else:
-                    with st.spinner("Extracting features with microsoft/resnet-50 and predicting events..."):
+                    with st.spinner("Analyzing match video with visual models..."):
                         summary_txt, raw_evs = summarize_video(custom_path)
                         custom_events = []
                         custom_narratives = {
@@ -332,303 +302,326 @@ with left_col:
                         current_events_list = custom_events
 
                 if not current_events_list:
-                    st.info("Analysis complete: ResNet-50 + EventLSTM scanned the entire clip. No goals, cards, or corners occurred during this play sequence.")
+                    match_status_text = "CLIP SCANNED (NO EVENTS)"
+        else:
+            match_display_name = "Waiting for file upload..."
+            match_status_text = "AWAITING VIDEO"
 
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # Hugging Face AI Models in Use
-    st.markdown("""
-    <div class="panel-card">
-        <div class="panel-card-title">🤖 Hugging Face AI Models in Use</div>
-        <div class="model-info-box">
-            <p style="margin-bottom: 0.75rem;">
-                <span class="model-highlight">1. Feature Extractor:</span> <code>microsoft/resnet-50</code> (Hugging Face Transformers)<br>
-                <strong>Purpose:</strong> Pretrained visual backbone that extracts 2048-dimensional embeddings per frame to spot key football incidents.
-            </p>
-            <p style="margin-bottom: 0.75rem;">
-                <span class="model-highlight">2. Sequence Classifier:</span> <code>EventLSTM</code> (PyTorch)<br>
-                <strong>Purpose:</strong> Sliding-window LSTM that spots sequential highlight moments (Goal, Card, Foul, Corner).
-            </p>
-            <p style="margin: 0;">
-                <span class="model-highlight">3. Summary Quality:</span> <code>evaluate.load("rouge")</code> (Hugging Face Evaluate)<br>
-                <strong>Purpose:</strong> Computes precision, recall, and ROUGE textual scores against reference football reports.
-            </p>
+with sel_col3:
+    st.markdown('<div style="font-size:1.1rem; font-weight:800; color:#FFFFFF; margin-bottom:0.4rem;">📊 Broadcast Feed Status</div>', unsafe_allow_html=True)
+    st.markdown(f"""
+    <div style="background:#182236; border:1.5px solid #283750; border-radius:8px; padding:0.6rem 1rem; display:flex; flex-direction:column; justify-content:center; gap:0.25rem;">
+        <div style="font-size:0.95rem; color:#F8FAFC; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+            <span style="color:#94A3B8;">MATCH:</span> <strong>{match_display_name}</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; font-weight:800;">
+            <span style="color:#79FE0C; display:flex; align-items:center; gap:0.35rem;">
+                <span style="width:8px; height:8px; border-radius:50%; background:#79FE0C; display:inline-block; box-shadow:0 0 8px #79FE0C;"></span>
+                {match_status_text}
+            </span>
+            <span style="color:#64748B;">LIVE SYNC</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
+st.markdown('</div>', unsafe_allow_html=True)
 
-# =============================================================================
-# RIGHT COLUMN: Synchronized Video Player + Real-Time Live Commentary
-# =============================================================================
-with right_col:
-    if current_video_url:
-        events_json = json.dumps(current_events_list)
 
-        # Embedded HTML5 Component Synchronizing Video Time with Live Commentary
-        html_code = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="utf-8">
-            <style>
-                * {{ box-sizing: border-box; }}
-                body {{
-                    margin: 0;
-                    padding: 0;
-                    background-color: transparent;
-                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-                    color: #FFFFFF;
-                }}
+# -----------------------------------------------------------------------------
+# Main Stage: Side-by-Side Video Player + Real-Time Live Commentary
+# -----------------------------------------------------------------------------
+if current_video_url:
+    events_json = json.dumps(current_events_list)
+
+    html_code = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <style>
+            * {{ box-sizing: border-box; }}
+            body {{
+                margin: 0;
+                padding: 0;
+                background-color: transparent;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                color: #FFFFFF;
+            }}
+            .theater-layout {{
+                display: grid;
+                grid-template-columns: 1.15fr 1fr;
+                gap: 1.5rem;
+                align-items: stretch;
+            }}
+            @media (max-width: 960px) {{
                 .theater-layout {{
-                    display: grid;
                     grid-template-columns: 1fr;
-                    gap: 1.5rem;
                 }}
-                
-                /* Video card */
-                .video-card {{
-                    background: #111726;
-                    border: 1px solid #1E293B;
-                    border-radius: 14px;
-                    padding: 1.25rem;
-                }}
-                video {{
-                    width: 100%;
-                    max-height: 480px;
-                    border-radius: 10px;
-                    background: #000000;
-                    outline: none;
-                }}
-                
-                /* Commentary Terminal */
-                .terminal-card {{
-                    background: linear-gradient(180deg, #131B2C 0%, #0C121E 100%);
-                    border: 2px solid #283750;
-                    border-radius: 16px;
-                    padding: 1.75rem;
-                    min-height: 280px;
-                }}
-                
-                .terminal-header {{
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    border-bottom: 2px solid #233149;
-                    padding-bottom: 1rem;
-                    margin-bottom: 1.5rem;
-                }}
-                .terminal-title {{
-                    font-size: 1.55rem;
-                    font-weight: 900;
-                    color: #FFFFFF;
-                    letter-spacing: -0.02em;
-                }}
-                .live-badge {{
-                    color: #79FE0C;
-                    font-size: 0.95rem;
-                    font-weight: 800;
-                    letter-spacing: 0.08em;
-                    text-transform: uppercase;
-                    display: flex;
-                    align-items: center;
-                    gap: 0.5rem;
-                }}
-                .pulse-dot {{
-                    width: 10px;
-                    height: 10px;
-                    border-radius: 50%;
-                    background-color: #79FE0C;
-                    box-shadow: 0 0 12px #79FE0C;
-                }}
-                
-                /* Broadcast event card */
-                .broadcast-card {{
-                    background-color: #172236;
-                    border-left: 8px solid #79FE0C;
-                    border-radius: 12px;
-                    padding: 1.6rem 1.8rem;
-                    margin-bottom: 1.25rem;
-                    box-shadow: 0 6px 25px rgba(0,0,0,0.4);
-                    animation: fadeIn 0.4s ease-out;
-                }}
-                @keyframes fadeIn {{
-                    from {{ opacity: 0; transform: translateY(8px); }}
-                    to {{ opacity: 1; transform: translateY(0); }}
-                }}
-                
-                .event-badge {{
-                    font-weight: 900;
-                    font-size: 1.6rem;
-                    color: #79FE0C;
-                    text-transform: uppercase;
-                    letter-spacing: 0.04em;
-                    margin-bottom: 0.8rem;
-                }}
-                
-                /* 32px Commentary Font */
-                .commentary-body {{
-                    font-size: 32px !important;
-                    font-weight: 700 !important;
-                    line-height: 1.55 !important;
-                    color: #FFFFFF !important;
-                    letter-spacing: -0.01em !important;
-                    margin: 0 !important;
-                }}
-                
-                .placeholder-box {{
-                    text-align: center;
-                    padding: 3rem 1.5rem;
-                    color: #64748B;
-                }}
-                .placeholder-icon {{
-                    font-size: 3.2rem;
-                    margin-bottom: 1rem;
-                }}
-                .placeholder-title {{
-                    font-size: 1.5rem;
-                    font-weight: 800;
-                    color: #FFFFFF;
-                    margin-bottom: 0.5rem;
-                }}
-                .placeholder-desc {{
-                    font-size: 1.15rem;
-                    color: #94A3B8;
-                    max-width: 500px;
-                    margin: 0 auto;
-                    line-height: 1.6;
-                }}
-            </style>
-        </head>
-        <body>
-            <div class="theater-layout">
-                <!-- Video Player -->
-                <div class="video-card">
-                    <video id="matchVid" controls preload="auto">
-                        <source src="{current_video_url}" type="video/mp4">
-                        Your browser does not support the video tag.
-                    </video>
-                </div>
+            }}
+            
+            /* Video card */
+            .video-card {{
+                background: #111726;
+                border: 1px solid #1E293B;
+                border-radius: 14px;
+                padding: 1.25rem;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }}
+            video {{
+                width: 100%;
+                max-height: 440px;
+                border-radius: 10px;
+                background: #000000;
+                outline: none;
+            }}
+            .video-caption {{
+                margin-top: 0.75rem;
+                font-size: 0.88rem;
+                color: #64748B;
+                text-align: center;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                font-weight: 700;
+            }}
+            
+            /* Commentary Terminal */
+            .terminal-card {{
+                background: linear-gradient(180deg, #131B2C 0%, #0C121E 100%);
+                border: 2px solid #283750;
+                border-radius: 16px;
+                padding: 1.6rem 1.8rem;
+                min-height: 480px;
+                display: flex;
+                flex-direction: column;
+            }}
+            
+            .terminal-header {{
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 2px solid #233149;
+                padding-bottom: 0.9rem;
+                margin-bottom: 1.25rem;
+            }}
+            .terminal-title {{
+                font-size: 1.4rem;
+                font-weight: 900;
+                color: #FFFFFF;
+                letter-spacing: -0.02em;
+            }}
+            .live-badge {{
+                color: #79FE0C;
+                font-size: 0.88rem;
+                font-weight: 800;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }}
+            .pulse-dot {{
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                background-color: #79FE0C;
+                box-shadow: 0 0 12px #79FE0C;
+            }}
+            
+            #commentaryContainer {{
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }}
 
-                <!-- Synchronized Live Commentary Terminal -->
-                <div class="terminal-card">
-                    <div class="terminal-header">
-                        <div class="terminal-title">🎙️ LIVE MATCH BROADCAST COMMENTARY</div>
-                        <div class="live-badge">
-                            <div class="pulse-dot"></div>
-                            SYNCHRONIZED FEED
-                        </div>
+            /* Broadcast event card */
+            .broadcast-card {{
+                background-color: #172236;
+                border-left: 8px solid #79FE0C;
+                border-radius: 12px;
+                padding: 1.5rem 1.7rem;
+                box-shadow: 0 6px 25px rgba(0,0,0,0.4);
+                animation: fadeIn 0.35s ease-out;
+            }}
+            @keyframes fadeIn {{
+                from {{ opacity: 0; transform: translateY(6px); }}
+                to {{ opacity: 1; transform: translateY(0); }}
+            }}
+            
+            .event-badge {{
+                font-weight: 900;
+                font-size: 1.45rem;
+                color: #79FE0C;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+                margin-bottom: 0.75rem;
+            }}
+            
+            /* 32px Commentary Font */
+            .commentary-body {{
+                font-size: 32px !important;
+                font-weight: 700 !important;
+                line-height: 1.5 !important;
+                color: #FFFFFF !important;
+                letter-spacing: -0.01em !important;
+                margin: 0 !important;
+            }}
+            
+            .placeholder-box {{
+                text-align: center;
+                padding: 2rem 1rem;
+                color: #64748B;
+            }}
+            .placeholder-icon {{
+                font-size: 3rem;
+                margin-bottom: 0.75rem;
+            }}
+            .placeholder-title {{
+                font-size: 1.4rem;
+                font-weight: 800;
+                color: #FFFFFF;
+                margin-bottom: 0.5rem;
+            }}
+            .placeholder-desc {{
+                font-size: 1.05rem;
+                color: #94A3B8;
+                max-width: 440px;
+                margin: 0 auto;
+                line-height: 1.55;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="theater-layout">
+            <!-- Video Player (Left) -->
+            <div class="video-card">
+                <video id="matchVid" controls preload="auto">
+                    <source src="{current_video_url}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                <div class="video-caption">Live Match Video Feed • Play to Sync Commentary</div>
+            </div>
+
+            <!-- Synchronized Live Commentary Terminal (Right) -->
+            <div class="terminal-card">
+                <div class="terminal-header">
+                    <div class="terminal-title">🎙️ LIVE MATCH COMMENTARY</div>
+                    <div class="live-badge">
+                        <div class="pulse-dot"></div>
+                        SYNCHRONIZED FEED
                     </div>
-                    
-                    <div id="commentaryContainer">
-                        <div class="placeholder-box">
-                            <div class="placeholder-icon">▶️</div>
-                            <div class="placeholder-title">Press Play to Start Match Commentary</div>
-                            <div class="placeholder-desc">
-                                As the video plays, live broadcast commentary will automatically trigger and type out the moment key match events happen.
-                            </div>
+                </div>
+                
+                <div id="commentaryContainer">
+                    <div class="placeholder-box">
+                        <div class="placeholder-icon">▶️</div>
+                        <div class="placeholder-title">Press Play to Start Match Commentary</div>
+                        <div class="placeholder-desc">
+                            As the video plays, live broadcast commentary will automatically trigger and type out in real-time when key match events occur.
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <script>
-                const vid = document.getElementById('matchVid');
-                const container = document.getElementById('commentaryContainer');
-                const events = {events_json};
+        <script>
+            const vid = document.getElementById('matchVid');
+            const container = document.getElementById('commentaryContainer');
+            const events = {events_json};
 
-                let triggeredSet = new Set();
-                let hasStarted = false;
+            let triggeredSet = new Set();
+            let hasStarted = false;
 
-                function renderCommentary(eventItem, animateText = true) {{
-                    container.innerHTML = `
-                        <div class="broadcast-card">
-                            <div class="event-badge">${{eventItem.label}}</div>
-                            <div id="typedText" class="commentary-body"></div>
-                        </div>
-                    `;
+            function renderCommentary(eventItem, animateText = true) {{
+                container.innerHTML = `
+                    <div class="broadcast-card">
+                        <div class="event-badge">${{eventItem.label}}</div>
+                        <div id="typedText" class="commentary-body"></div>
+                    </div>
+                `;
 
-                    const textTarget = document.getElementById('typedText');
-                    if (!animateText) {{
-                        textTarget.textContent = eventItem.text;
-                        return;
-                    }}
-
-                    // Typewriter word-by-word streaming effect
-                    const words = eventItem.text.split(' ');
-                    let currentWordIdx = 0;
-                    textTarget.textContent = '';
-
-                    const timer = setInterval(() => {{
-                        if (currentWordIdx < words.length) {{
-                            textTarget.textContent += words[currentWordIdx] + ' ';
-                            currentWordIdx++;
-                        }} else {{
-                            clearInterval(timer);
-                        }}
-                    }}, 45);
+                const textTarget = document.getElementById('typedText');
+                if (!animateText) {{
+                    textTarget.textContent = eventItem.text;
+                    return;
                 }}
 
-                function showMatchInProgress() {{
-                    container.innerHTML = `
-                        <div class="broadcast-card" style="border-left-color: #38BDF8;">
-                            <div class="event-badge" style="color: #38BDF8;">MATCH UNDERWAY</div>
-                            <div class="commentary-body">
-                                The match is underway. Both teams are contesting possession across midfield with organized tactical structures. Watching for key scoring opportunities...
-                            </div>
+                // Typewriter word-by-word streaming effect
+                const words = eventItem.text.split(' ');
+                let currentWordIdx = 0;
+                textTarget.textContent = '';
+
+                const timer = setInterval(() => {{
+                    if (currentWordIdx < words.length) {{
+                        textTarget.textContent += words[currentWordIdx] + ' ';
+                        currentWordIdx++;
+                    }} else {{
+                        clearInterval(timer);
+                    }}
+                }}, 45);
+            }}
+
+            function showMatchInProgress() {{
+                container.innerHTML = `
+                    <div class="broadcast-card" style="border-left-color: #38BDF8;">
+                        <div class="event-badge" style="color: #38BDF8;">MATCH UNDERWAY</div>
+                        <div class="commentary-body">
+                            The match is underway. Both teams are contesting possession across midfield with organized tactical structures. Watching for key scoring opportunities...
                         </div>
-                    `;
-                }}
+                    </div>
+                `;
+            }}
 
-                vid.addEventListener('play', () => {{
-                    if (!hasStarted) {{
-                        hasStarted = true;
-                        // Check if an event already happened at current time
-                        let found = false;
-                        for (let i = 0; i < events.length; i++) {{
-                            if (vid.currentTime >= events[i].trigger_time) {{
-                                triggeredSet.add(i);
-                                renderCommentary(events[i], false);
-                                found = true;
-                                break;
-                            }}
-                        }}
-                        if (!found) {{
-                            showMatchInProgress();
-                        }}
-                    }}
-                }});
-
-                vid.addEventListener('timeupdate', () => {{
-                    const t = vid.currentTime;
+            vid.addEventListener('play', () => {{
+                if (!hasStarted) {{
+                    hasStarted = true;
+                    let found = false;
                     for (let i = 0; i < events.length; i++) {{
-                        const ev = events[i];
-                        if (t >= ev.trigger_time && !triggeredSet.has(i)) {{
+                        if (vid.currentTime >= events[i].trigger_time) {{
                             triggeredSet.add(i);
-                            renderCommentary(ev, true);
+                            renderCommentary(events[i], false);
+                            found = true;
+                            break;
                         }}
                     }}
-                }});
-
-                vid.addEventListener('seeked', () => {{
-                    const t = vid.currentTime;
-                    triggeredSet.clear();
-                    let activeEv = null;
-                    for (let i = 0; i < events.length; i++) {{
-                        if (t >= events[i].trigger_time) {{
-                            triggeredSet.add(i);
-                            activeEv = events[i];
-                        }}
-                    }}
-                    if (activeEv) {{
-                        renderCommentary(activeEv, false);
-                    }} else if (hasStarted) {{
+                    if (!found) {{
                         showMatchInProgress();
                     }}
-                }});
-            </script>
-        </body>
-        </html>
-        """
+                }}
+            }});
 
-        components.html(html_code, height=920, scrolling=False)
+            vid.addEventListener('timeupdate', () => {{
+                const t = vid.currentTime;
+                for (let i = 0; i < events.length; i++) {{
+                    const ev = events[i];
+                    if (t >= ev.trigger_time && !triggeredSet.has(i)) {{
+                        triggeredSet.add(i);
+                        renderCommentary(ev, true);
+                    }}
+                }}
+            }});
+
+            vid.addEventListener('seeked', () => {{
+                const t = vid.currentTime;
+                triggeredSet.clear();
+                let activeEv = null;
+                for (let i = 0; i < events.length; i++) {{
+                    if (t >= events[i].trigger_time) {{
+                        triggeredSet.add(i);
+                        activeEv = events[i];
+                    }}
+                }}
+                if (activeEv) {{
+                    renderCommentary(activeEv, false);
+                }} else if (hasStarted) {{
+                    showMatchInProgress();
+                }}
+            }});
+        </script>
+    </body>
+    </html>
+    """
+
+    components.html(html_code, height=540, scrolling=False)
