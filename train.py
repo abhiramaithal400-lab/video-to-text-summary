@@ -53,11 +53,17 @@ def load_or_extract_features(clip_path):
 
 
 def build_training_windows():
-    # Read labels and generate windowed dataset
-    if not LABELS_FILE.exists():
-        raise FileNotFoundError(f"Labels file not found: {LABELS_FILE}")
-
-    df_labels = pd.read_csv(LABELS_FILE)
+    # Read labels from SQLite database (fallback to CSV if necessary)
+    try:
+        from database import get_annotations_dataframe, init_db
+        init_db()
+        df_labels = get_annotations_dataframe()
+        if df_labels.empty and LABELS_FILE.exists():
+            df_labels = pd.read_csv(LABELS_FILE)
+    except Exception:
+        if not LABELS_FILE.exists():
+            raise FileNotFoundError(f"Labels file not found: {LABELS_FILE}")
+        df_labels = pd.read_csv(LABELS_FILE)
     window_len = max(1, WINDOW_SIZE * FRAME_RATE)
 
     all_windows = []

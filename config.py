@@ -11,3 +11,4 @@ ALLOWED_FORMATS = ["mp4"]
 MERGE_GAP_SECONDS = 5
 MODEL_PATH = "models/lstm.pt"
 FEATURE_DIM = 2048
+DATABASE_PATH = "sports_summary.db"

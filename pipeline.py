@@ -3,6 +3,7 @@ from validation import validate_video
 from frame_sampler import sample_frames
 from detector import extract_features, detect_events, merge_nearby_events
 from text_generator import build_summary
+from database import record_video_analysis, init_db
 
 
 def summarize_video(video_path):
@@ -30,6 +31,13 @@ def summarize_video(video_path):
 
     # Step 6: Generate textual summary
     summary_text = build_summary(merged)
+
+    # Step 7: Record analysis results in SQLite database
+    try:
+        duration = float(timestamps[-1]) if timestamps else 0.0
+        record_video_analysis(video_path, duration, merged, summary_text)
+    except Exception as db_err:
+        print(f"[Database Log Warning]: {db_err}")
 
     return summary_text, merged
 
