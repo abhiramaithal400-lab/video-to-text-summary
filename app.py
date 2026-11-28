@@ -11,13 +11,15 @@ import config
 from validation import validate_video
 from pipeline import summarize_video
 
+BASE_DIR = Path(__file__).resolve().parent
+
 
 def load_video_b64(path_or_bytes):
     """Convert video bytes or file path into a Base64 Data URI for 100% reliable HTML5 playback."""
     if isinstance(path_or_bytes, (str, Path)):
         p = Path(path_or_bytes)
         if not p.is_absolute():
-            p = config.BASE_DIR / p
+            p = BASE_DIR / p
         if not p.exists():
             return None
         with open(p, "rb") as f:
@@ -265,7 +267,7 @@ with sel_col2:
             label_visibility="collapsed",
         )
         match_info = DEMO_MATCHES[chosen_demo_name]
-        demo_file_path = config.BASE_DIR / match_info["file_path"]
+        demo_file_path = BASE_DIR / match_info["file_path"]
         current_video_url = load_video_b64(demo_file_path) or match_info["static_url"]
         current_events_list = match_info["events"]
         match_display_name = f"{match_info['home']} vs {match_info['away']}"
@@ -279,7 +281,7 @@ with sel_col2:
         if uploaded_file is not None:
             video_bytes = uploaded_file.getvalue()
             custom_filename = f"upload_{uploaded_file.name.replace(' ', '_')}"
-            custom_dir = config.BASE_DIR / "static"
+            custom_dir = BASE_DIR / "static"
             custom_dir.mkdir(parents=True, exist_ok=True)
             custom_path = str(custom_dir / custom_filename)
             with open(custom_path, "wb") as f:
