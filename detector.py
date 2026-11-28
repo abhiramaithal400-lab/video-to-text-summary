@@ -1,9 +1,14 @@
 import os
 import numpy as np
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from transformers import AutoImageProcessor, ResNetModel
+
+try:
+    import torch
+    import torch.nn as nn
+    import torch.nn.functional as F
+    from transformers import AutoImageProcessor, ResNetModel
+    TORCH_AVAILABLE = True
+except ImportError:
+    TORCH_AVAILABLE = False
 
 from config import (
     FEATURE_DIM,
@@ -19,6 +24,10 @@ def extract_features(frames):
     # Return empty array if no frames were provided
     if not frames:
         return np.empty((0, FEATURE_DIM), dtype=np.float32)
+
+    if not TORCH_AVAILABLE:
+        print("Note: PyTorch / Transformers not installed. Using demo feature representations.")
+        return np.zeros((len(frames), FEATURE_DIM), dtype=np.float32)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -44,28 +53,36 @@ def extract_features(frames):
     return np.vstack(all_features)
 
 
-class EventLSTM(nn.Module):
-    # One LSTM layer, hidden size 128, dropout 0.3, and a linear output layer
-    def __init__(self, input_dim=FEATURE_DIM, hidden_dim=128, num_classes=len(EVENT_LABELS), dropout=0.3):
-        super().__init__()
-        self.lstm = nn.LSTM(input_size=input_dim, hidden_size=hidden_dim, batch_first=True)
-        self.dropout = nn.Dropout(dropout)
-        self.fc = nn.Linear(hidden_dim, num_classes)
+if TORCH_AVAILABLE:
+    class EventLSTM(nn.Module):
+        # One LSTM layer, hidden size 128, dropout 0.3, and a linear output layer
+        def __init__(self, input_dim=FEATURE_DIM, hidden_dim=128, num_classes=len(EVENT_LABELS), dropout=0.3):
+            super().__init__()
+            self.lstm = nn.LSTM(input_size=input_dim, hidden_size=hidden_dim, batch_first=True)
+            self.dropout = nn.Dropout(dropout)
+            self.fc = nn.Linear(hidden_dim, num_classes)
 
-    def forward(self, x):
-        # Input shape: [batch, window_len, FEATURE_DIM]
-        lstm_out, _ = self.lstm(x)
-        # Take the output from the final time step
-        last_step = lstm_out[:, -1, :]
-        out = self.dropout(last_step)
-        logits = self.fc(out)
-        return logits
+        def forward(self, x):
+            # Input shape: [batch, window_len, FEATURE_DIM]
+            lstm_out, _ = self.lstm(x)
+            # Take the output from the final time step
+            last_step = lstm_out[:, -1, :]
+            out = self.dropout(last_step)
+            logits = self.fc(out)
+            return logits
+else:
+    class EventLSTM:
+        def __init__(self, *args, **kwargs):
+            pass
 
 
 def detect_events(features, timestamps):
-    # If trained model file does not exist, run in DEMO MODE with clear warning
-    if not os.path.exists(MODEL_PATH):
-        print(f"Warning: Model file not found at '{MODEL_PATH}'. Running in DEMO MODE.")
+    # If PyTorch is unavailable or trained model file does not exist, run in DEMO MODE with clear warning
+    if not TORCH_AVAILABLE or not os.path.exists(MODEL_PATH):
+        if not TORCH_AVAILABLE:
+            print("Note: PyTorch not installed in this environment. Running in DEMO MODE.")
+        else:
+            print(f"Warning: Model file not found at '{MODEL_PATH}'. Running in DEMO MODE.")
         demo_events = []
         if len(timestamps) > 0:
             max_time = timestamps[-1]
